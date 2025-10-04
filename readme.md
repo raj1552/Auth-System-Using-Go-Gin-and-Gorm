@@ -1,6 +1,6 @@
-# Go Authentication System with PostgreSQL
+# Go Authentication System with Gin and Gorm
 
-This is a simple authentication system built with Go, GORM, and PostgreSQL. It allows users to register, login, and receive a JWT token for authentication.
+This is a simple authentication system built with Go, Gin, GORM, and PostgreSQL. It allows users to register, login, and receive a JWT token for authentication.
 
 ## Setup
 
