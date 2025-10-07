@@ -29,6 +29,13 @@ func CreateUser(c *gin.Context) {
 		return
 	}
 
+	var emailFound models.User
+	initializers.DB.Where("email=?", authInput.Email).Find(&emailFound)
+
+	if emailFound.ID != 0 {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Email already used"})
+	}
+
 	passwordHash, err := bcrypt.GenerateFromPassword([]byte(authInput.Password), bcrypt.DefaultCost)
 	if err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
@@ -37,6 +44,7 @@ func CreateUser(c *gin.Context) {
 
 	user := models.User{
 		Username: authInput.Username,
+		Email:    authInput.Email,
 		Password: string(passwordHash),
 	}
 
@@ -48,28 +56,28 @@ func CreateUser(c *gin.Context) {
 
 func Login(c *gin.Context) {
 
-	var authInput models.AuthInput
+	var loginInput models.LoginInput
 
-	if err := c.ShouldBindJSON(&authInput); err != nil {
+	if err := c.ShouldBindJSON(&loginInput); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 	}
 
-	var userFound models.User
-	initializers.DB.Where("username=?", authInput.Username).Find(&userFound)
+	var emailFound models.User
+	initializers.DB.Where("email=?", loginInput.Email).Find(&emailFound)
 
-	if userFound.ID == 0 {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "user not found"})
+	if emailFound.ID == 0 {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "User not found"})
 		return
 	}
 
-	if err := bcrypt.CompareHashAndPassword([]byte(userFound.Password), []byte(authInput.Password)); err != nil {
+	if err := bcrypt.CompareHashAndPassword([]byte(emailFound.Password), []byte(loginInput.Password)); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid password"})
 		return
 	}
 
 	generateToken := jwt.NewWithClaims(jwt.SigningMethodHS256, jwt.MapClaims{
-		"id":  userFound.ID,
+		"id":  emailFound.ID,
 		"exp": time.Now().Add(time.Hour * 24).Unix(),
 	})
 
@@ -83,7 +91,6 @@ func Login(c *gin.Context) {
 		"token": token,
 	})
 }
-
 
 func GetUserProfile(c *gin.Context) {
 
